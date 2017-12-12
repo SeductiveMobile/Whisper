@@ -27,6 +27,12 @@ open class ShoutView: UIView {
     public static var titlesSpace: CGFloat = 1
   }
     
+    fileprivate(set) lazy var containerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .clear
+        return view
+    }()
+    
     open fileprivate(set) lazy var containerStackView: UIStackView = {
         let view = UIStackView(arrangedSubviews: [self.imageView, self.textStackView])
         view.alignment = .top
@@ -119,7 +125,7 @@ open class ShoutView: UIView {
   open fileprivate(set) var completion: (() -> ())?
 
   
-    private var translationOffsetBegin: CGFloat? = 0
+    private var translationOffsetBegin: CGFloat? = nil
     private var internalHeightConstraint: NSLayoutConstraint?
     private var internalLeadingConstraint: NSLayoutConstraint?
     private var internalTrailingConstraint: NSLayoutConstraint?
@@ -164,21 +170,21 @@ open class ShoutView: UIView {
 
   public override init(frame: CGRect) {
     super.init(frame: frame)
+    containerView.addSubview(backgroundView)
+    addSubview(containerView)
     
-    addSubview(backgroundView)
     [containerStackView, indicatorView].forEach {
-      $0.translatesAutoresizingMaskIntoConstraints = false
       backgroundView.addSubview($0)
     }
 
-    clipsToBounds = true
-    layer.shadowColor = UIColor.black.cgColor
-    layer.shadowOffset = CGSize(width: 0, height: 0.5)
-    layer.shadowOpacity = 0.1
-    layer.shadowRadius = 0.5
+    clipsToBounds = false
+    containerView.layer.shadowColor = UIColor.black.cgColor
+    containerView.layer.shadowOffset = CGSize(width: 0, height: 0.5)
+    containerView.layer.shadowOpacity = 0.1
+    containerView.layer.shadowRadius = 0.5
 
     backgroundView.addGestureRecognizer(tapGestureRecognizer)
-    addGestureRecognizer(panGestureRecognizer)
+    backgroundView.addGestureRecognizer(panGestureRecognizer)
 
     NotificationCenter.default.addObserver(self, selector: #selector(ShoutView.orientationDidChange), name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
     setupConstraints()
@@ -195,10 +201,11 @@ open class ShoutView: UIView {
 
   // MARK: - Configuration
 
-  open func craft(_ announcement: Announcement, to: UIViewController, completion: (() -> ())?) {
+  open func craft(_ announcement: Announcement, completion: (() -> ())?) {
     shouldSilent = false
     configureView(announcement)
     shout()
+    
 
     self.completion = completion
   }
@@ -221,20 +228,26 @@ open class ShoutView: UIView {
     }
     superView.addSubview(self)
     setupContainerConstraints(view: superView)
-    self.superview?.layoutIfNeeded()
+    self.layoutIfNeeded()
 
     internalHeightConstraint?.constant = safeYOffsetCoordinate + Dimensions.height
     UIView.animate(withDuration: 0.35, animations: {
-      self.superview?.layoutIfNeeded()
+      self.layoutIfNeeded()
     })
   }
 
   // MARK: - Setup
     
     private func setupContainerConstraints(view: UIView) {
-        internalLeadingConstraint = view.leadingAnchor.constraint(equalTo: leadingAnchor)
-        internalTrailingConstraint = view.trailingAnchor.constraint(equalTo: trailingAnchor)
-        internalTopConstraint = view.topAnchor.constraint(equalTo: topAnchor)
+        // Self
+        view.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        view.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        view.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        
+        // Container View
+        internalLeadingConstraint = view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor)
+        internalTrailingConstraint = view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor)
+        internalTopConstraint = view.topAnchor.constraint(equalTo: containerView.topAnchor)
         
         internalLeadingConstraint?.isActive = true
         internalTrailingConstraint?.isActive = true
@@ -243,24 +256,28 @@ open class ShoutView: UIView {
     
     public func setupConstraints() {
         //Self
-        internalHeightConstraint = self.heightAnchor.constraint(equalToConstant: 0)
+        translatesAutoresizingMaskIntoConstraints = false
+        heightAnchor.constraint(equalToConstant: safeYOffsetCoordinate + Dimensions.height).isActive = true
+        
+        //Container View
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        internalHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: 0)
         internalHeightConstraint?.isActive = true
         
         //Background View
-        self.translatesAutoresizingMaskIntoConstraints = false
         backgroundView.translatesAutoresizingMaskIntoConstraints = false
-        backgroundView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-        backgroundView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-        backgroundView.topAnchor.constraint(equalTo: topAnchor).isActive = true
-        backgroundView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+        backgroundView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor).isActive = true
+        backgroundView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor).isActive = true
+        backgroundView.topAnchor.constraint(equalTo: containerView.topAnchor).isActive = true
+        backgroundView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor).isActive = true
         
         //Image View
         let imageHeightConstraint = imageView.heightAnchor.constraint(equalToConstant: Dimensions.imageSize)
         let imageWidthConstraint = imageView.widthAnchor.constraint(equalToConstant: Dimensions.imageSize)
-        imageHeightConstraint.isActive = true
         imageHeightConstraint.priority = 999
-        imageWidthConstraint.isActive = true
         imageWidthConstraint.priority = 999
+        imageWidthConstraint.isActive = true
+        imageHeightConstraint.isActive = true
         
         //Container View
         containerStackView.translatesAutoresizingMaskIntoConstraints = false
@@ -273,33 +290,45 @@ open class ShoutView: UIView {
         bottomBackgroundViewConstraint.priority = 999
         
         //Indicator View
+        indicatorView.translatesAutoresizingMaskIntoConstraints = false
         indicatorView.heightAnchor.constraint(equalToConstant: Dimensions.indicatorHeight).isActive = true
         indicatorView.widthAnchor.constraint(equalToConstant: Dimensions.indicatorWidth).isActive = true
         indicatorView.centerXAnchor.constraint(equalTo: backgroundView.centerXAnchor).isActive = true
         indicatorView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -Dimensions.indicatorBottomOffset).isActive = true
         
         //Title View
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.heightAnchor.constraint(equalToConstant: Dimensions.titleHeight).isActive = true
     }
     
 
   // MARK: - Actions
 
-    open func silent(moving: Bool = true) {
+    open func silent(moving: Bool = true, animated: Bool = true) {
         _shoutView?.isUserInteractionEnabled = false
         if moving {
             self.internalHeightConstraint?.constant = 0
         }
-    
-        UIView.animate(withDuration: 0.4, animations: {
-            self.alpha = 0
-            self.superview?.layoutIfNeeded()
-          }, completion: { finished in
+        let clean = {
+            if _shoutView == self {
+                _shoutView = nil
+            }
             self.completion?()
             self.displayTimer.invalidate()
             self.removeConstraints()
             self.removeFromSuperview()
-        })
+        }
+        
+//        if animated {
+            UIView.animate(withDuration: 0.4, animations: {
+                self.alpha = 0
+                self.layoutIfNeeded()
+              }, completion: { finished in
+                clean()
+            })
+//        } else {
+//            clean()
+//        }
     }
     
     private func removeConstraints() {
@@ -364,7 +393,7 @@ open class ShoutView: UIView {
         } else {
             internalHeightConstraint?.constant = safeYOffsetCoordinate + Dimensions.height
             UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 0, options: [], animations: {
-                self.superview?.layoutIfNeeded()
+                self.layoutIfNeeded()
             }, completion: nil)
         }
     }
