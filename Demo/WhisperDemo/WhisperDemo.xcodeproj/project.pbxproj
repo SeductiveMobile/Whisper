@@ -13,6 +13,7 @@
 		29AD42A01BBC2BD2004292F1 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD429F1BBC2BD2004292F1 /* ViewController.swift */; };
 		29AD42A51BBC2BD2004292F1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 29AD42A41BBC2BD2004292F1 /* Assets.xcassets */; };
 		29AD42A81BBC2BD2004292F1 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 29AD42A61BBC2BD2004292F1 /* LaunchScreen.storyboard */; };
+		B9B930A21FDE95AD007099FE /* TestView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B9B930A11FDE95AD007099FE /* TestView.xib */; };
 		F0A980C33596AF684B3D9EB0 /* Pods_WhisperDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AD9E11F8DF355CB269D58C5F /* Pods_WhisperDemo.framework */; };
 /* End PBXBuildFile section */
 
@@ -40,6 +41,7 @@
 		6F0DEAB1F8C735F802579CE1 /* Pods.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD9E11F8DF355CB269D58C5F /* Pods_WhisperDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_WhisperDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B056A0C0A940EF3C92E08D24 /* Pods-WhisperDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WhisperDemo.debug.xcconfig"; path = "Pods/Target Support Files/Pods-WhisperDemo/Pods-WhisperDemo.debug.xcconfig"; sourceTree = "<group>"; };
+		B9B930A11FDE95AD007099FE /* TestView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TestView.xib; sourceTree = "<group>"; };
 		EF03BCFAFBE8B2FA7C98C617 /* Pods-WhisperDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WhisperDemo.release.xcconfig"; path = "Pods/Target Support Files/Pods-WhisperDemo/Pods-WhisperDemo.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -109,6 +111,7 @@
 				29AD42A41BBC2BD2004292F1 /* Assets.xcassets */,
 				29AD42A61BBC2BD2004292F1 /* LaunchScreen.storyboard */,
 				29AD42A91BBC2BD2004292F1 /* Info.plist */,
+				B9B930A11FDE95AD007099FE /* TestView.xib */,
 			);
 			path = WhisperDemo;
 			sourceTree = "<group>";
@@ -180,6 +183,7 @@
 					};
 					29AD42991BBC2BD2004292F1 = {
 						CreatedOnToolsVersion = 7.0;
+						DevelopmentTeam = 44QNY7YAFQ;
 						LastSwiftMigration = 0800;
 						ProvisioningStyle = Automatic;
 					};
@@ -216,6 +220,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B9B930A21FDE95AD007099FE /* TestView.xib in Resources */,
 				29AD42A81BBC2BD2004292F1 /* LaunchScreen.storyboard in Resources */,
 				29AD42A51BBC2BD2004292F1 /* Assets.xcassets in Resources */,
 			);
@@ -388,7 +393,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -436,7 +441,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
@@ -453,11 +458,13 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 44QNY7YAFQ;
 				INFOPLIST_FILE = WhisperDemo/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = no.hyper.WhisperDemo;
+				PRODUCT_BUNDLE_IDENTIFIER = no.test;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
 		};
@@ -468,11 +475,13 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 44QNY7YAFQ;
 				INFOPLIST_FILE = WhisperDemo/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = no.hyper.WhisperDemo;
+				PRODUCT_BUNDLE_IDENTIFIER = no.test;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.0;
 			};
 			name = Release;
 		};

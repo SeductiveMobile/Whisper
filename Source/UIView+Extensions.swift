@@ -1,18 +1,31 @@
 import UIKit
 
 extension UIView {
-  var safeYCoordinate: CGFloat {
-    let y: CGFloat
-    if #available(iOS 11.0, *) {
-      y = safeAreaInsets.top
-    } else {
-      y = 0
+    var safeYCoordinate: CGFloat? {
+        if #available(iOS 11.0, *) {
+            return safeAreaInsets.top
+        } else {
+            return nil
+        }
+    }
+    
+    var safeLeftCoordinate: CGFloat? {
+        if #available(iOS 11.0, *) {
+            return safeAreaInsets.left
+        } else {
+            return nil
+        }
+    }
+    
+    var safeRightCoordinate: CGFloat? {
+        if #available(iOS 11.0, *) {
+            return safeAreaInsets.right
+        } else {
+            return nil
+        }
     }
 
-    return y
-  }
-
   var isiPhoneX: Bool {
-    return safeYCoordinate > 20
+    return safeYCoordinate ?? 0 > 20
   }
 }

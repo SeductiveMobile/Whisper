@@ -1,17 +1,49 @@
 import UIKit
 
-let shoutView = ShoutView()
+var shoutView: ShoutView {
+    _shoutView?.silent(moving: false)
+    let view = ShoutView()
+    _shoutView = view
+    return view
+}
+fileprivate var _shoutView: ShoutView? = nil
 
 open class ShoutView: UIView {
 
   public struct Dimensions {
-    public static let indicatorHeight: CGFloat = 6
-    public static let indicatorWidth: CGFloat = 50
-    public static let imageSize: CGFloat = 48
-    public static let imageOffset: CGFloat = 18
-    public static var textOffset: CGFloat = 75
-    public static var touchOffset: CGFloat = 40
+    public static let indicatorHeight: CGFloat = 3
+    public static var indicatorBottomOffset: CGFloat = 5
+    public static let indicatorWidth: CGFloat = 33
+    public static let imageSize: CGFloat = 40
+    public static let titleHeight: CGFloat = 14
+    public static var touchOffset: CGFloat = 80
+    
+    // container
+    public static var height: CGFloat = 67
+    public static var leftOffset: CGFloat = 10
+    public static var rightOffset: CGFloat = 10
+    public static var topOffset: CGFloat = 10
+    public static var bottomOffset: CGFloat = 5
+    public static var titlesSpace: CGFloat = 1
   }
+    
+    open fileprivate(set) lazy var containerStackView: UIStackView = {
+        let view = UIStackView(arrangedSubviews: [self.imageView, self.textStackView])
+        view.alignment = .top
+        view.axis = .horizontal
+        view.spacing = 10
+        view.distribution = .fill
+        return view
+    }()
+    
+    open fileprivate(set) lazy var textStackView: UIStackView = {
+        let view = UIStackView(arrangedSubviews: [self.titleLabel, self.subtitleTextView])
+        view.alignment = .top
+        view.axis = .vertical
+        view.spacing = Dimensions.titlesSpace
+        view.distribution = .fill
+        return view
+    }()
 
   open fileprivate(set) lazy var backgroundView: UIView = {
     let view = UIView()
@@ -44,18 +76,27 @@ open class ShoutView: UIView {
     let label = UILabel()
     label.font = FontList.Shout.title
     label.textColor = ColorList.Shout.title
-    label.numberOfLines = 2
+    label.numberOfLines = 1
+    label.clipsToBounds = true
+    label.lineBreakMode = .byWordWrapping
 
     return label
     }()
-
-  open fileprivate(set) lazy var subtitleLabel: UILabel = {
-    let label = UILabel()
-    label.font = FontList.Shout.subtitle
-    label.textColor = ColorList.Shout.subtitle
-    label.numberOfLines = 2
-
-    return label
+    
+    open fileprivate(set) lazy var subtitleTextView: UITextView = {
+        let textView = UITextView()
+        textView.font = FontList.Shout.subtitle
+        textView.textColor = ColorList.Shout.subtitle
+        textView.isScrollEnabled = false
+        textView.clipsToBounds = true
+        textView.isEditable = false
+        textView.backgroundColor = .clear
+        textView.contentInset = .zero
+        textView.textContainerInset = .zero
+        textView.textContainer.lineFragmentPadding = 0
+        textView.textContainer.lineBreakMode = .byTruncatingTail
+        textView.isUserInteractionEnabled = false
+        return textView
     }()
 
   open fileprivate(set) lazy var tapGestureRecognizer: UITapGestureRecognizer = { [unowned self] in
@@ -74,26 +115,63 @@ open class ShoutView: UIView {
 
   open fileprivate(set) var announcement: Announcement?
   open fileprivate(set) var displayTimer = Timer()
-  open fileprivate(set) var panGestureActive = false
   open fileprivate(set) var shouldSilent = false
   open fileprivate(set) var completion: (() -> ())?
 
-  private var subtitleLabelOriginalHeight: CGFloat = 0
-  private var internalHeight: CGFloat = 0
+  
+    private var translationOffsetBegin: CGFloat? = 0
+    private var internalHeightConstraint: NSLayoutConstraint?
+    private var internalLeadingConstraint: NSLayoutConstraint?
+    private var internalTrailingConstraint: NSLayoutConstraint?
+    private var internalTopConstraint: NSLayoutConstraint?
+    private weak var windowView: UIView? = UIApplication.shared.keyWindow
+    
+    private var panGestureActive: Bool {
+        return translationOffsetBegin != nil
+    }
+    
+    //MARK: - Safe Area
+    
+    var safeYOffsetCoordinate: CGFloat {
+        if let safeArea = self.windowView?.safeYCoordinate, safeArea > 0 {
+            return safeArea
+        }
+        return Dimensions.topOffset
+    }
+    
+    var safeLeftOffsetCoordinate: CGFloat {
+        if let safeArea = self.windowView?.safeLeftCoordinate, safeArea > 0 {
+            return safeArea
+        }
+        return Dimensions.leftOffset
+    }
+    
+    var safeRightOffsetCoordinate: CGFloat {
+        if let safeArea = self.windowView?.safeRightCoordinate, safeArea > 0 {
+            return safeArea
+        }
+        return Dimensions.rightOffset
+    }
+    
+    var heightToFillContent: CGFloat {
+        let subtitleHeight = subtitleTextView.contentSize.height
+        return Dimensions.topOffset + Dimensions.titleHeight + Dimensions.titlesSpace
+            + subtitleHeight + Dimensions.bottomOffset + Dimensions.indicatorHeight
+            + Dimensions.indicatorBottomOffset
+    }
 
   // MARK: - Initializers
 
   public override init(frame: CGRect) {
     super.init(frame: frame)
-
+    
     addSubview(backgroundView)
-    [imageView, titleLabel, subtitleLabel, indicatorView].forEach {
-      $0.autoresizingMask = []
+    [containerStackView, indicatorView].forEach {
+      $0.translatesAutoresizingMaskIntoConstraints = false
       backgroundView.addSubview($0)
     }
 
-    clipsToBounds = false
-    isUserInteractionEnabled = true
+    clipsToBounds = true
     layer.shadowColor = UIColor.black.cgColor
     layer.shadowOffset = CGSize(width: 0, height: 0.5)
     layer.shadowOpacity = 0.1
@@ -103,6 +181,7 @@ open class ShoutView: UIView {
     addGestureRecognizer(panGestureRecognizer)
 
     NotificationCenter.default.addObserver(self, selector: #selector(ShoutView.orientationDidChange), name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
+    setupConstraints()
   }
 
   public required init?(coder aDecoder: NSCoder) {
@@ -110,16 +189,16 @@ open class ShoutView: UIView {
   }
 
   deinit {
+    print("Deinit ShoutView")
     NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
   }
 
   // MARK: - Configuration
 
   open func craft(_ announcement: Announcement, to: UIViewController, completion: (() -> ())?) {
-    panGestureActive = false
     shouldSilent = false
     configureView(announcement)
-    shout(to: to)
+    shout()
 
     self.completion = completion
   }
@@ -127,91 +206,118 @@ open class ShoutView: UIView {
   open func configureView(_ announcement: Announcement) {
     self.announcement = announcement
     imageView.image = announcement.image
+    imageView.isHidden = announcement.image == nil
     titleLabel.text = announcement.title
-    subtitleLabel.text = announcement.subtitle
+    subtitleTextView.text = announcement.subtitle
 
     displayTimer.invalidate()
     displayTimer = Timer.scheduledTimer(timeInterval: announcement.duration,
       target: self, selector: #selector(ShoutView.displayTimerDidFire), userInfo: nil, repeats: false)
-
-    setupFrames()
   }
 
-  open func shout(to controller: UIViewController) {
-    controller.view.addSubview(self)
+  open func shout() {
+    guard let superView = self.windowView else {
+        return
+    }
+    superView.addSubview(self)
+    setupContainerConstraints(view: superView)
+    self.superview?.layoutIfNeeded()
 
-    frame.size.height = 0
+    internalHeightConstraint?.constant = safeYOffsetCoordinate + Dimensions.height
     UIView.animate(withDuration: 0.35, animations: {
-      self.frame.size.height = self.internalHeight + Dimensions.touchOffset
+      self.superview?.layoutIfNeeded()
     })
   }
 
   // MARK: - Setup
-
-  public func setupFrames() {
-    internalHeight = (UIApplication.shared.isStatusBarHidden ? 55 : 65)
-
-    let totalWidth = UIScreen.main.bounds.width
-    let offset: CGFloat = UIApplication.shared.isStatusBarHidden ? 2.5 : 5
-    let textOffsetX: CGFloat = imageView.image != nil ? Dimensions.textOffset : 18
-    let imageSize: CGFloat = imageView.image != nil ? Dimensions.imageSize : 0
-
-    [titleLabel, subtitleLabel].forEach {
-        $0.frame.size.width = totalWidth - imageSize - (Dimensions.imageOffset * 2)
-        $0.sizeToFit()
+    
+    private func setupContainerConstraints(view: UIView) {
+        internalLeadingConstraint = view.leadingAnchor.constraint(equalTo: leadingAnchor)
+        internalTrailingConstraint = view.trailingAnchor.constraint(equalTo: trailingAnchor)
+        internalTopConstraint = view.topAnchor.constraint(equalTo: topAnchor)
+        
+        internalLeadingConstraint?.isActive = true
+        internalTrailingConstraint?.isActive = true
+        internalTopConstraint?.isActive = true
     }
-
-    internalHeight += subtitleLabel.frame.height
-
-    imageView.frame = CGRect(x: Dimensions.imageOffset, y: (internalHeight - imageSize) / 2 + offset,
-      width: imageSize, height: imageSize)
-
-    let textOffsetY = imageView.image != nil ? imageView.frame.origin.x + 3 : textOffsetX + 5
-
-    titleLabel.frame.origin = CGPoint(x: textOffsetX, y: textOffsetY)
-    subtitleLabel.frame.origin = CGPoint(x: textOffsetX, y: titleLabel.frame.maxY + 2.5)
-
-    if subtitleLabel.text?.isEmpty ?? true {
-      titleLabel.center.y = imageView.center.y - 2.5
+    
+    public func setupConstraints() {
+        //Self
+        internalHeightConstraint = self.heightAnchor.constraint(equalToConstant: 0)
+        internalHeightConstraint?.isActive = true
+        
+        //Background View
+        self.translatesAutoresizingMaskIntoConstraints = false
+        backgroundView.translatesAutoresizingMaskIntoConstraints = false
+        backgroundView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        backgroundView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        backgroundView.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        backgroundView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+        
+        //Image View
+        let imageHeightConstraint = imageView.heightAnchor.constraint(equalToConstant: Dimensions.imageSize)
+        let imageWidthConstraint = imageView.widthAnchor.constraint(equalToConstant: Dimensions.imageSize)
+        imageHeightConstraint.isActive = true
+        imageHeightConstraint.priority = 999
+        imageWidthConstraint.isActive = true
+        imageWidthConstraint.priority = 999
+        
+        //Container View
+        containerStackView.translatesAutoresizingMaskIntoConstraints = false
+        containerStackView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: safeLeftOffsetCoordinate).isActive = true
+        containerStackView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -safeRightOffsetCoordinate).isActive = true
+        containerStackView.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Dimensions.topOffset + safeYOffsetCoordinate).isActive = true
+        
+        let bottomBackgroundViewConstraint = containerStackView.bottomAnchor.constraint(equalTo: indicatorView.topAnchor, constant: -Dimensions.bottomOffset)
+        bottomBackgroundViewConstraint.isActive = true
+        bottomBackgroundViewConstraint.priority = 999
+        
+        //Indicator View
+        indicatorView.heightAnchor.constraint(equalToConstant: Dimensions.indicatorHeight).isActive = true
+        indicatorView.widthAnchor.constraint(equalToConstant: Dimensions.indicatorWidth).isActive = true
+        indicatorView.centerXAnchor.constraint(equalTo: backgroundView.centerXAnchor).isActive = true
+        indicatorView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -Dimensions.indicatorBottomOffset).isActive = true
+        
+        //Title View
+        titleLabel.heightAnchor.constraint(equalToConstant: Dimensions.titleHeight).isActive = true
     }
-
-    frame = CGRect(x: 0, y: safeYCoordinate,
-                   width: totalWidth, height: internalHeight + Dimensions.touchOffset)
-  }
-
-  // MARK: - Frame
-
-  open override var frame: CGRect {
-    didSet {
-      backgroundView.frame = CGRect(x: 0, y: safeYCoordinate,
-                                    width: frame.size.width,
-                                    height: frame.size.height - Dimensions.touchOffset)
-
-      indicatorView.frame = CGRect(x: (backgroundView.frame.size.width - Dimensions.indicatorWidth) / 2,
-                                   y: backgroundView.frame.height - Dimensions.indicatorHeight - 5,
-                                   width: Dimensions.indicatorWidth,
-                                   height: Dimensions.indicatorHeight)
-    }
-  }
+    
 
   // MARK: - Actions
 
-  open func silent() {
-    UIView.animate(withDuration: 0.35, animations: {
-      self.frame.size.height = 0
-      }, completion: { finished in
-        self.completion?()
-        self.displayTimer.invalidate()
-        self.removeFromSuperview()
-    })
-  }
+    open func silent(moving: Bool = true) {
+        _shoutView?.isUserInteractionEnabled = false
+        if moving {
+            self.internalHeightConstraint?.constant = 0
+        }
+    
+        UIView.animate(withDuration: 0.4, animations: {
+            self.alpha = 0
+            self.superview?.layoutIfNeeded()
+          }, completion: { finished in
+            self.completion?()
+            self.displayTimer.invalidate()
+            self.removeConstraints()
+            self.removeFromSuperview()
+        })
+    }
+    
+    private func removeConstraints() {
+        internalTopConstraint.flatMap(removeConstraint)
+        internalLeadingConstraint.flatMap(removeConstraint)
+        internalTrailingConstraint.flatMap(removeConstraint)
+        internalTopConstraint = nil
+        internalLeadingConstraint = nil
+        internalTrailingConstraint = nil
+    }
 
   // MARK: - Timer methods
 
     @objc open func displayTimerDidFire() {
-    shouldSilent = true
-
-    if panGestureActive { return }
+    guard !panGestureActive else {
+        shouldSilent = true
+        return
+    }
     silent()
   }
 
@@ -224,38 +330,43 @@ open class ShoutView: UIView {
   }
   
   @objc private func handlePanGestureRecognizer() {
-    let translation = panGestureRecognizer.translation(in: self)
+    let translationY = panGestureRecognizer.translation(in: self).y
 
     if panGestureRecognizer.state == .began {
-      subtitleLabelOriginalHeight = subtitleLabel.bounds.size.height
-      subtitleLabel.numberOfLines = 0
-      subtitleLabel.sizeToFit()
-    } else if panGestureRecognizer.state == .changed {
-      panGestureActive = true
-      
-      let maxTranslation = subtitleLabel.bounds.size.height - subtitleLabelOriginalHeight
-      
-      if translation.y >= maxTranslation {
-        frame.size.height = internalHeight + maxTranslation
-          + (translation.y - maxTranslation) / 25 + Dimensions.touchOffset
-      } else {
-        frame.size.height = internalHeight + translation.y + Dimensions.touchOffset
-      }
-    } else {
-      panGestureActive = false
-      let height = translation.y < -5 || shouldSilent ? 0 : internalHeight
+        translationOffsetBegin = translationY
+        subtitleTextView.isScrollEnabled = true
 
-      subtitleLabel.numberOfLines = 2
-      subtitleLabel.sizeToFit()
-      
-      UIView.animate(withDuration: 0.2, animations: {
-        self.frame.size.height = height + Dimensions.touchOffset
-      }, completion: { _ in
-          if translation.y < -5 {
-            self.completion?()
-            self.removeFromSuperview()
+    } else if panGestureRecognizer.state == .changed {
+        guard let translationOffsetBegin = translationOffsetBegin else { return }
+        let diff = translationOffsetBegin - translationY
+        let newHeight = Dimensions.height - diff
+        let scrollEnabled: Bool
+        
+        if diff >= 0 {
+            internalHeightConstraint?.constant = Dimensions.height + safeYOffsetCoordinate
+            scrollEnabled = false
+        } else if newHeight <= self.heightToFillContent {
+            internalHeightConstraint?.constant = newHeight + safeYOffsetCoordinate
+            scrollEnabled = true
+        } else {
+            internalHeightConstraint?.constant = safeYOffsetCoordinate + self.heightToFillContent - diff/20
+            scrollEnabled = true
         }
-      })
+        subtitleTextView.isScrollEnabled = scrollEnabled
+        superview?.layoutIfNeeded()
+        
+    } else {
+        translationOffsetBegin = nil
+        subtitleTextView.isScrollEnabled = false
+        
+        if panGestureRecognizer.velocity(in: self).y < 0 || shouldSilent {
+            silent()
+        } else {
+            internalHeightConstraint?.constant = safeYOffsetCoordinate + Dimensions.height
+            UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 0, options: [], animations: {
+                self.superview?.layoutIfNeeded()
+            }, completion: nil)
+        }
     }
   }
 
@@ -263,6 +374,6 @@ open class ShoutView: UIView {
   // MARK: - Handling screen orientation
 
     @objc func orientationDidChange() {
-    setupFrames()
-  }
+        silent(moving: false)
+    }
 }

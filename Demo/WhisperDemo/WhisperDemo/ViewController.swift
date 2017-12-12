@@ -103,12 +103,12 @@ class ViewController: UIViewController {
         $0.layer.cornerRadius = 7.5
     }
 
-    guard let navigationController = navigationController else { return }
+//    guard let navigationController = navigationController else { return }
 
-    navigationController.navigationBar.addSubview(containerView)
-    containerView.frame = CGRect(x: 0,
-      y: navigationController.navigationBar.frame.maxY - UIApplication.shared.statusBarFrame.height,
-      width: UIScreen.main.bounds.width, height: 0)
+//    navigationController.navigationBar.addSubview(containerView)
+//    containerView.frame = CGRect(x: 0,
+//      y: navigationController.navigationBar.frame.maxY - UIApplication.shared.statusBarFrame.height,
+//      width: UIScreen.main.bounds.width, height: 0)
   }
 
   override func viewDidAppear(_ animated: Bool) {
