@@ -39,6 +39,12 @@ open class ShoutView: UIView {
         return view
     }()
     
+    fileprivate(set) lazy var actionButton: UIButton = {
+        let actionButton = UIButton(frame: .zero)
+        actionButton.backgroundColor = .clear
+        return actionButton
+    }()
+    
     open fileprivate(set) lazy var containerStackView: UIStackView = {
         let view = UIStackView(arrangedSubviews: [self.imageView, self.textStackView])
         view.alignment = .center
@@ -106,7 +112,7 @@ open class ShoutView: UIView {
 
   open fileprivate(set) lazy var tapGestureRecognizer: UITapGestureRecognizer = { [unowned self] in
     let gesture = UITapGestureRecognizer()
-    gesture.addTarget(self, action: #selector(ShoutView.handleTapGestureRecognizer))
+    gesture.addTarget(self, action: #selector(handleTapGestureRecognizer))
 
     return gesture
     }()
@@ -171,7 +177,7 @@ open class ShoutView: UIView {
     super.init(frame: frame)
     containerView.addSubview(backgroundView)
     addSubview(containerView)
-    
+    addSubview(actionButton)
     [containerStackView].forEach {
         backgroundView.contentView.addSubview($0)
     }
@@ -179,7 +185,9 @@ open class ShoutView: UIView {
     containerView.clipsToBounds = true
     containerView.layer.cornerRadius = 10.0
 
-    backgroundView.addGestureRecognizer(tapGestureRecognizer)
+    actionButton.addTarget(self, action: #selector(handleTapGestureRecognizer), for: .touchUpInside)
+    
+//    containerView.addGestureRecognizer(tapGestureRecognizer)
 //    backgroundView.addGestureRecognizer(panGestureRecognizer)
 
     NotificationCenter.default.addObserver(self, selector: #selector(ShoutView.orientationDidChange), name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
@@ -256,7 +264,7 @@ open class ShoutView: UIView {
     public func setupConstraints() {
         //Self
         translatesAutoresizingMaskIntoConstraints = false
-        heightAnchor.constraint(equalToConstant: Dimensions.height).isActive = true
+        heightAnchor.constraint(equalToConstant: Dimensions.height+safeYOffsetCoordinate+Dimensions.topInset).isActive = true
         
         //Container View
         containerView.translatesAutoresizingMaskIntoConstraints = false
@@ -290,6 +298,15 @@ open class ShoutView: UIView {
         
         let heightConstraint = maxSubtitleHeight(font: subtitleTextView.font!, widthOffset: Dimensions.imageSize + Dimensions.containerSpacing + Dimensions.leftOffset + Dimensions.rightOffset)
         subtitleTextView.heightAnchor.constraint(equalToConstant: heightConstraint).isActive = true
+        
+        //Action button
+        actionButton.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            actionButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            actionButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
+            actionButton.topAnchor.constraint(equalTo: backgroundView.topAnchor),
+            actionButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor)
+        ])
         
         //Title View
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
