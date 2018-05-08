@@ -227,7 +227,7 @@ open class ShoutView: UIView {
     self.layoutIfNeeded()
 
     internalHeightConstraint?.constant = Dimensions.height
-    internalTopConstraint?.constant = -Dimensions.topInset
+    internalTopConstraint?.constant = -Dimensions.topInset-safeYOffsetCoordinate
     
     
     UIView.animate(withDuration: 1, delay: 0.0, usingSpringWithDamping: 0.5, initialSpringVelocity: 5, options: .curveEaseInOut, animations: {
@@ -333,7 +333,7 @@ open class ShoutView: UIView {
             return
         } else {
             UIView.animate(withDuration: 0.3, animations: {
-                self.internalTopConstraint?.constant = Dimensions.topInset+Dimensions.height
+                self.internalTopConstraint?.constant = Dimensions.topInset+Dimensions.height+self.safeYOffsetCoordinate
                 self.layoutIfNeeded()
             }, completion: { finished in
                 clean()
