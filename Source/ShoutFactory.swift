@@ -14,17 +14,23 @@ open class ShoutView: UIView {
     public static let indicatorHeight: CGFloat = 3
     public static var indicatorBottomOffset: CGFloat = 5
     public static let indicatorWidth: CGFloat = 33
-    public static let imageSize: CGFloat = 40
+    public static let imageSize: CGFloat = 37
+    public static let imageCornerRadius: CGFloat = 6.0
     public static let titleHeight: CGFloat = 14
     public static var touchOffset: CGFloat = 80
     
+    public static var subtitleMaxLinesCount = 1
+    public static var containerSpacing: CGFloat = 10.0
+    
     // container
-    public static var height: CGFloat = 67
+    public static var height: CGFloat = 65
     public static var leftOffset: CGFloat = 10
     public static var rightOffset: CGFloat = 10
-    public static var topOffset: CGFloat = 10
-    public static var bottomOffset: CGFloat = 5
+    public static var topOffset: CGFloat = 14
+    public static var bottomOffset: CGFloat = 14
     public static var titlesSpace: CGFloat = 1
+    public static var topInset: CGFloat = 26.0
+    
   }
     
     fileprivate(set) lazy var containerView: UIView = {
@@ -35,43 +41,36 @@ open class ShoutView: UIView {
     
     open fileprivate(set) lazy var containerStackView: UIStackView = {
         let view = UIStackView(arrangedSubviews: [self.imageView, self.textStackView])
-        view.alignment = .top
+        view.alignment = .center
         view.axis = .horizontal
-        view.spacing = 10
+        view.spacing = Dimensions.containerSpacing
         view.distribution = .fill
         return view
     }()
     
     open fileprivate(set) lazy var textStackView: UIStackView = {
-        let view = UIStackView(arrangedSubviews: [self.titleLabel, self.subtitleTextView])
-        view.alignment = .top
-        view.axis = .vertical
-        view.spacing = Dimensions.titlesSpace
-        view.distribution = .fill
-        return view
+        let stackView = UIStackView(arrangedSubviews: [self.titleLabel, self.subtitleTextView])
+        stackView.alignment = .leading
+        stackView.axis = .vertical
+        stackView.spacing = Dimensions.titlesSpace
+        stackView.distribution = .fill
+        stackView.spacing = 5.0
+        return stackView
     }()
 
-  open fileprivate(set) lazy var backgroundView: UIView = {
-    let view = UIView()
-    view.backgroundColor = ColorList.Shout.background
-    view.alpha = 0.98
+  open fileprivate(set) lazy var backgroundView: VisualEffectView = {
+    let view = VisualEffectView()
+    let color = UIColor(red: 69.0/255.0, green:  73.0/255.0, blue:  77.0/255.0, alpha: 1.0)
+    view.tint(color, blurRadius: 6)
+    
     view.clipsToBounds = true
-
-    return view
-    }()
-
-  open fileprivate(set) lazy var indicatorView: UIView = {
-    let view = UIView()
-    view.backgroundColor = ColorList.Shout.dragIndicator
-    view.layer.cornerRadius = Dimensions.indicatorHeight / 2
-    view.isUserInteractionEnabled = true
 
     return view
     }()
 
   open fileprivate(set) lazy var imageView: UIImageView = {
     let imageView = UIImageView()
-    imageView.layer.cornerRadius = Dimensions.imageSize / 2
+    imageView.layer.cornerRadius = Dimensions.imageCornerRadius
     imageView.clipsToBounds = true
     imageView.contentMode = .scaleAspectFill
 
@@ -80,8 +79,8 @@ open class ShoutView: UIView {
 
   open fileprivate(set) lazy var titleLabel: UILabel = {
     let label = UILabel()
-    label.font = FontList.Shout.title
-    label.textColor = ColorList.Shout.title
+    label.font = UIFont.systemFont(ofSize: 14.0, weight: .semibold)
+    label.textColor = .white
     label.numberOfLines = 1
     label.clipsToBounds = true
     label.lineBreakMode = .byWordWrapping
@@ -91,8 +90,8 @@ open class ShoutView: UIView {
     
     open fileprivate(set) lazy var subtitleTextView: UITextView = {
         let textView = UITextView()
-        textView.font = FontList.Shout.subtitle
-        textView.textColor = ColorList.Shout.subtitle
+        textView.font = UIFont.systemFont(ofSize: 14.0)
+        textView.textColor = .white
         textView.isScrollEnabled = false
         textView.clipsToBounds = true
         textView.isEditable = false
@@ -173,18 +172,15 @@ open class ShoutView: UIView {
     containerView.addSubview(backgroundView)
     addSubview(containerView)
     
-    [containerStackView, indicatorView].forEach {
-      backgroundView.addSubview($0)
+    [containerStackView].forEach {
+        backgroundView.contentView.addSubview($0)
     }
 
-    clipsToBounds = false
-    containerView.layer.shadowColor = UIColor.black.cgColor
-    containerView.layer.shadowOffset = CGSize(width: 0, height: 0.5)
-    containerView.layer.shadowOpacity = 0.1
-    containerView.layer.shadowRadius = 0.5
+    containerView.clipsToBounds = true
+    containerView.layer.cornerRadius = 10.0
 
     backgroundView.addGestureRecognizer(tapGestureRecognizer)
-    backgroundView.addGestureRecognizer(panGestureRecognizer)
+//    backgroundView.addGestureRecognizer(panGestureRecognizer)
 
     NotificationCenter.default.addObserver(self, selector: #selector(ShoutView.orientationDidChange), name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
     setupConstraints()
@@ -230,10 +226,13 @@ open class ShoutView: UIView {
     setupContainerConstraints(view: superView)
     self.layoutIfNeeded()
 
-    internalHeightConstraint?.constant = safeYOffsetCoordinate + Dimensions.height
-    UIView.animate(withDuration: 0.35, animations: {
-      self.layoutIfNeeded()
-    })
+    internalHeightConstraint?.constant = Dimensions.height
+    internalTopConstraint?.constant = -Dimensions.topInset
+    
+    
+    UIView.animate(withDuration: 1, delay: 0.0, usingSpringWithDamping: 0.5, initialSpringVelocity: 5, options: .curveEaseInOut, animations: {
+        self.layoutIfNeeded()
+    }, completion: nil)
   }
 
   // MARK: - Setup
@@ -245,9 +244,9 @@ open class ShoutView: UIView {
         view.topAnchor.constraint(equalTo: topAnchor).isActive = true
         
         // Container View
-        internalLeadingConstraint = view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor)
-        internalTrailingConstraint = view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor)
-        internalTopConstraint = view.topAnchor.constraint(equalTo: containerView.topAnchor)
+        internalLeadingConstraint = view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: -10.0)
+        internalTrailingConstraint = view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: 10.0)
+        internalTopConstraint = view.topAnchor.constraint(equalTo: containerView.topAnchor, constant: Dimensions.topInset+Dimensions.height)
         
         internalLeadingConstraint?.isActive = true
         internalTrailingConstraint?.isActive = true
@@ -257,11 +256,11 @@ open class ShoutView: UIView {
     public func setupConstraints() {
         //Self
         translatesAutoresizingMaskIntoConstraints = false
-        heightAnchor.constraint(equalToConstant: safeYOffsetCoordinate + Dimensions.height).isActive = true
+        heightAnchor.constraint(equalToConstant: Dimensions.height).isActive = true
         
         //Container View
         containerView.translatesAutoresizingMaskIntoConstraints = false
-        internalHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: 0)
+        internalHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: Dimensions.height)
         internalHeightConstraint?.isActive = true
         
         //Background View
@@ -274,41 +273,47 @@ open class ShoutView: UIView {
         //Image View
         let imageHeightConstraint = imageView.heightAnchor.constraint(equalToConstant: Dimensions.imageSize)
         let imageWidthConstraint = imageView.widthAnchor.constraint(equalToConstant: Dimensions.imageSize)
-        imageHeightConstraint.priority = 999
-        imageWidthConstraint.priority = 999
+        imageHeightConstraint.priority = UILayoutPriority(rawValue: 999)
+        imageWidthConstraint.priority = UILayoutPriority(rawValue: 999)
         imageWidthConstraint.isActive = true
         imageHeightConstraint.isActive = true
         
         //Container View
         containerStackView.translatesAutoresizingMaskIntoConstraints = false
-        containerStackView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: safeLeftOffsetCoordinate).isActive = true
-        containerStackView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -safeRightOffsetCoordinate).isActive = true
-        containerStackView.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Dimensions.topOffset + safeYOffsetCoordinate).isActive = true
         
-        let bottomBackgroundViewConstraint = containerStackView.bottomAnchor.constraint(equalTo: indicatorView.topAnchor, constant: -Dimensions.bottomOffset)
-        bottomBackgroundViewConstraint.isActive = true
-        bottomBackgroundViewConstraint.priority = 999
+        NSLayoutConstraint.activate([
+            containerStackView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: 10.0),
+            containerStackView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -10.0),
+            containerStackView.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Dimensions.topOffset),
+            containerStackView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -Dimensions.bottomOffset)
+            ])
         
-        //Indicator View
-        indicatorView.translatesAutoresizingMaskIntoConstraints = false
-        indicatorView.heightAnchor.constraint(equalToConstant: Dimensions.indicatorHeight).isActive = true
-        indicatorView.widthAnchor.constraint(equalToConstant: Dimensions.indicatorWidth).isActive = true
-        indicatorView.centerXAnchor.constraint(equalTo: backgroundView.centerXAnchor).isActive = true
-        indicatorView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -Dimensions.indicatorBottomOffset).isActive = true
+        let heightConstraint = maxSubtitleHeight(font: subtitleTextView.font!, widthOffset: Dimensions.imageSize + Dimensions.containerSpacing + Dimensions.leftOffset + Dimensions.rightOffset)
+        subtitleTextView.heightAnchor.constraint(equalToConstant: heightConstraint).isActive = true
         
         //Title View
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.heightAnchor.constraint(equalToConstant: Dimensions.titleHeight).isActive = true
     }
     
+    
+    // MARK: - Util
+    
+    private func maxSubtitleHeight(font: UIFont, widthOffset: CGFloat) -> CGFloat {
+        guard ShoutView.Dimensions.subtitleMaxLinesCount > 0 else { return 0.0 }
+        let width = UIScreen.main.bounds.width - widthOffset
+        guard ShoutView.Dimensions.subtitleMaxLinesCount > 1 else {
+            return "".height(withConstrainedWidth: width, font: font)
+        }
+        let lines: String = Array.init(repeating: "\n", count: ShoutView.Dimensions.subtitleMaxLinesCount-1).joined()
+        return lines.height(withConstrainedWidth: UIScreen.main.bounds.width - widthOffset, font: font)
+    }
 
   // MARK: - Actions
 
     open func silent(moving: Bool = true, animated: Bool = true) {
         _shoutView?.isUserInteractionEnabled = false
-        if moving {
-            self.internalHeightConstraint?.constant = 0
-        }
+        
         let clean = {
             if _shoutView == self {
                 _shoutView = nil
@@ -319,16 +324,23 @@ open class ShoutView: UIView {
             self.removeFromSuperview()
         }
         
-//        if animated {
-            UIView.animate(withDuration: 0.4, animations: {
+        if !moving {
+            UIView.animate(withDuration: 1, animations: {
                 self.alpha = 0
-                self.layoutIfNeeded()
-              }, completion: { finished in
+            }, completion: { finished in
                 clean()
             })
-//        } else {
-//            clean()
-//        }
+            return
+        } else {
+            UIView.animate(withDuration: 0.3, animations: {
+                self.internalTopConstraint?.constant = Dimensions.topInset+Dimensions.height
+                self.layoutIfNeeded()
+            }, completion: { finished in
+                clean()
+            })
+        }
+        
+        
     }
     
     private func removeConstraints() {
@@ -387,7 +399,7 @@ open class ShoutView: UIView {
     } else {
         translationOffsetBegin = nil
         subtitleTextView.isScrollEnabled = false
-        
+        print("\(translationY)")
         if panGestureRecognizer.velocity(in: self).y < 0 || shouldSilent {
             silent()
         } else {
@@ -406,3 +418,5 @@ open class ShoutView: UIView {
         silent(moving: false)
     }
 }
+
+

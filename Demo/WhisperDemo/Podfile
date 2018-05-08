@@ -5,7 +5,7 @@ platform :ios, '10.0'
 use_frameworks!
 
 target 'WhisperDemo' do
-  pod 'Whisper', :path => '/Users/bomalkevych/Documents/git/Whisper'
+  pod 'Whisper', :path => '/Users/pitermiller/Documents/XCODE/Whisper'
 end
 
 post_install do |installer|

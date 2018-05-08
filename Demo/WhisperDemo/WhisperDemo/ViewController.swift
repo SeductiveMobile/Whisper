@@ -129,7 +129,7 @@ class ViewController: UIViewController {
     let message = Message(title: "This message will silent in 3 seconds.", backgroundColor: UIColor(red:0.89, green:0.09, blue:0.44, alpha:1))
 
     Whisper.show(whisper: message, to: navigationController, action: .present)
-    hide(whisperFrom: navigationController, after: 3)
+    hide(whisperFrom: navigationController, after: 2)
   }
 
   @objc func showButtonDidPress(_ button: UIButton) {
@@ -148,13 +148,11 @@ class ViewController: UIViewController {
   }
 
   @objc func presentNotificationDidPress(_ button: UIButton) {
-    let announcement = Announcement(title: "Ramon Gilabert", subtitle: "Vadym Markov just commented your post: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'", image: UIImage(named: "avatar"), duration: 30)
+    let announcement = Announcement(title: "Ramon Gilabert", subtitle: "Vadym Markov just commented your post: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequatVadym Markov just commented your post: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequatVadym Markov just commented your post: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequatVadym Markov just commented your post: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'", image: UIImage(named: "avatar"), duration: 2)
 
-    if let navigationController = navigationController {
-      Whisper.show(shout: announcement, to: navigationController, completion: {
+    Whisper.show(shout: announcement, completion: {
         print("The shout was silent.")
-      })
-    }
+    })
   }
 
   @objc func nextButtonDidPress() {
